@@ -22,6 +22,8 @@ enum Category {
   Housekeeping
   Maintenance
   RoomService
+  Safety
+  Food
   FrontOffice
   Other
 }
@@ -46,6 +48,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(Staff)
+  phone     String?  // WhatsApp phone number for notifications
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -62,6 +65,9 @@ model ServiceRequest {
   priority           Priority       @default(Low)
   status             RequestStatus  @default(Pending)
   assignedDepartment String?
+  assignedToStaff    String?        // Staff member assigned to ticket
+  isEscalated        Boolean        @default(false)
+  escalationReason   String?
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
@@ -79,4 +85,3 @@ model RequestHistory {
   updatedBy      User?          @relation(fields: [updatedById], references: [id], onDelete: SetNull)
   createdAt      DateTime       @default(now())
 }
-

@@ -1,5 +1,6 @@
 const prisma = require('../config/db');
 const { generateTicketId } = require('../utils/ticketGenerator');
+const { checkAndApply30MinEscalations, createWhatsAppNotificationUrl } = require('../services/escalationService');
 
 // POST /api/requests (Guest submission)
 const createGuestRequest = async (req, res) => {
@@ -18,6 +19,14 @@ const createGuestRequest = async (req, res) => {
       existing = await prisma.serviceRequest.findUnique({ where: { ticketId } });
     }
 
+    // Auto-map initial assigned department based on category
+    let initialDepartment = null;
+    if (category === 'Housekeeping') initialDepartment = 'Housekeeping';
+    else if (category === 'Maintenance') initialDepartment = 'Maintenance';
+    else if (category === 'RoomService' || category === 'Food') initialDepartment = 'Food & Room Service';
+    else if (category === 'Safety') initialDepartment = 'Security & Safety';
+    else if (category === 'FrontOffice') initialDepartment = 'Front Office';
+
     const newRequest = await prisma.serviceRequest.create({
       data: {
         ticketId,
@@ -27,22 +36,24 @@ const createGuestRequest = async (req, res) => {
         description: description.trim(),
         priority: priority || 'Low',
         status: 'Pending',
+        assignedDepartment: initialDepartment,
       },
     });
 
-    // Create initial history record
+    // Create initial history record with timestamp
     await prisma.requestHistory.create({
       data: {
         requestId: newRequest.id,
         previousStatus: 'Pending',
         newStatus: 'Pending',
-        remarks: 'Request submitted by guest through room QR portal.',
+        remarks: 'Request registered by guest via room QR portal.',
       },
     });
 
     return res.status(201).json({
       message: 'Request submitted successfully!',
       request: newRequest,
+      estimatedResponseTime: newRequest.priority === 'High' ? '15 minutes' : '30 minutes',
     });
   } catch (error) {
     console.error('Create request error:', error);
@@ -85,10 +96,13 @@ const trackGuestRequest = async (req, res) => {
   }
 };
 
-// GET /api/requests (Staff: list with filtering & search)
+// GET /api/requests (Staff: list with filtering & search, triggers auto 30-min escalation)
 const getAllRequests = async (req, res) => {
   try {
-    const { status, category, priority, search } = req.query;
+    // Run 30-minute SLA escalation check
+    await checkAndApply30MinEscalations();
+
+    const { status, category, priority, search, department } = req.query;
 
     const where = {};
 
@@ -98,6 +112,10 @@ const getAllRequests = async (req, res) => {
 
     if (category && category !== 'ALL') {
       where.category = category;
+    }
+
+    if (department && department !== 'ALL') {
+      where.assignedDepartment = { contains: department, mode: 'insensitive' };
     }
 
     if (priority && priority !== 'ALL') {
@@ -115,7 +133,10 @@ const getAllRequests = async (req, res) => {
 
     const requests = await prisma.serviceRequest.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { priority: 'desc' }, // High priority first
+        { createdAt: 'desc' },
+      ],
       include: {
         _count: {
           select: { history: true },
@@ -163,7 +184,7 @@ const getRequestById = async (req, res) => {
   }
 };
 
-// PATCH /api/requests/:id (Staff/Manager/Admin update)
+// PATCH /api/requests/:id (Staff/Manager/Admin update & assignment & sign-off)
 const updateRequest = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -171,7 +192,7 @@ const updateRequest = async (req, res) => {
       return res.status(400).json({ error: 'Invalid request ID' });
     }
 
-    const { status, assignedDepartment, remarks, priority } = req.body;
+    const { status, assignedDepartment, assignedToStaff, remarks, priority, isEscalated, escalationReason } = req.body;
 
     const existing = await prisma.serviceRequest.findUnique({ where: { id } });
     if (!existing) {
@@ -181,7 +202,10 @@ const updateRequest = async (req, res) => {
     const updateData = {};
     if (status) updateData.status = status;
     if (assignedDepartment !== undefined) updateData.assignedDepartment = assignedDepartment;
+    if (assignedToStaff !== undefined) updateData.assignedToStaff = assignedToStaff;
     if (priority) updateData.priority = priority;
+    if (isEscalated !== undefined) updateData.isEscalated = isEscalated;
+    if (escalationReason !== undefined) updateData.escalationReason = escalationReason;
 
     const previousStatus = existing.status;
     const newStatus = status || existing.status;
@@ -252,6 +276,16 @@ const getRequestHistory = async (req, res) => {
   }
 };
 
+// POST /api/requests/check-escalations (Trigger 30-min SLA check directly)
+const triggerEscalationCheck = async (req, res) => {
+  try {
+    const count = await checkAndApply30MinEscalations();
+    return res.json({ message: `Escalation check completed. ${count} tickets escalated.`, escalatedCount: count });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to trigger escalation check' });
+  }
+};
+
 module.exports = {
   createGuestRequest,
   trackGuestRequest,
@@ -259,5 +293,5 @@ module.exports = {
   getRequestById,
   updateRequest,
   getRequestHistory,
+  triggerEscalationCheck,
 };
-

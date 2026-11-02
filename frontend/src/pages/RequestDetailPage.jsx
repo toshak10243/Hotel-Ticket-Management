@@ -4,15 +4,12 @@ import api from '../services/api';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
   ArrowLeft,
-  Building2,
-  Clock,
-  Send,
   History,
   CheckCircle,
   AlertTriangle,
-  FileText,
-  User,
-  Shield
+  UserCheck,
+  ShieldCheck,
+  MessageCircle
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -21,24 +18,32 @@ export const RequestDetailPage = () => {
   const navigate = useNavigate();
 
   const [request, setRequest] = useState(null);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Form states for updating request
+  // Form states for updating request (US08: Manager assignment of tickets)
   const [status, setStatus] = useState('');
   const [assignedDepartment, setAssignedDepartment] = useState('');
+  const [assignedToStaff, setAssignedToStaff] = useState('');
   const [priority, setPriority] = useState('');
   const [remarks, setRemarks] = useState('');
   const [updating, setUpdating] = useState(false);
 
-  const fetchRequest = async () => {
+  const fetchRequestAndStaff = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/requests/${id}`);
-      const data = res.data.request;
+      const [reqRes, usersRes] = await Promise.all([
+        api.get(`/requests/${id}`),
+        api.get('/users').catch(() => ({ data: { users: [] } })),
+      ]);
+
+      const data = reqRes.data.request;
       setRequest(data);
       setStatus(data.status);
       setAssignedDepartment(data.assignedDepartment || '');
+      setAssignedToStaff(data.assignedToStaff || '');
       setPriority(data.priority);
+      setUsers(usersRes.data.users || []);
     } catch (err) {
       console.error('Fetch request error:', err);
       Swal.fire({
@@ -52,7 +57,7 @@ export const RequestDetailPage = () => {
   };
 
   useEffect(() => {
-    fetchRequest();
+    fetchRequestAndStaff();
   }, [id]);
 
   const handleUpdate = async (e) => {
@@ -63,6 +68,7 @@ export const RequestDetailPage = () => {
       const payload = {
         status,
         assignedDepartment: assignedDepartment || null,
+        assignedToStaff: assignedToStaff || null,
         priority,
         remarks: remarks.trim() || undefined,
       };
@@ -91,6 +97,41 @@ export const RequestDetailPage = () => {
     }
   };
 
+  // US11: Complaint sign-off by manager
+  const handleManagerSignOff = async () => {
+    const result = await Swal.fire({
+      title: 'Formal Manager Sign-off',
+      text: `Confirm that ticket ${request.ticketId} has been verified with guest satisfaction and mark as Closed?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      confirmButtonText: 'Sign-Off & Close Ticket',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const res = await api.patch(`/requests/${id}`, {
+          status: 'Closed',
+          remarks: '[MANAGER FORMAL SIGN-OFF]: Inspected work, verified satisfaction with guest, and closed ticket.',
+        });
+        setRequest(res.data.request);
+        setStatus('Closed');
+        Swal.fire('Signed Off', 'Ticket has been formally signed off and closed.', 'success');
+      } catch (err) {
+        Swal.fire('Error', 'Sign-off failed.', 'error');
+      }
+    }
+  };
+
+  // US14: WhatsApp dispatch
+  const handleWhatsAppAlert = () => {
+    const defaultNumber = '919829012345';
+    const message = encodeURIComponent(
+      `*Hotel Arya Niwas Staff Alert*\nTicket: ${request.ticketId}\nRoom: ${request.roomNumber}\nDept: ${request.assignedDepartment || request.category}\nStaff: ${request.assignedToStaff || 'Duty Attendant'}\nIssue: ${request.description}\nStatus: ${request.status}`
+    );
+    window.open(`https://wa.me/${defaultNumber}?text=${message}`, '_blank');
+  };
+
   if (loading) {
     return (
       <div className="py-12 text-center text-slate-500 text-sm">
@@ -114,17 +155,27 @@ export const RequestDetailPage = () => {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Top back navigation */}
-      <div className="flex items-center gap-3">
-        <Link
-          to="/dashboard/requests"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:text-slate-900 rounded-lg text-xs font-semibold shadow-xs"
+      {/* Top back navigation & WhatsApp trigger */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link
+            to="/dashboard/requests"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:text-slate-900 rounded-lg text-xs font-semibold shadow-xs"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back to Queue
+          </Link>
+          <span className="text-slate-400">/</span>
+          <span className="text-xs font-mono font-bold text-slate-700">{request.ticketId}</span>
+        </div>
+
+        <button
+          onClick={handleWhatsAppAlert}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-bold transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Back to List
-        </Link>
-        <span className="text-slate-400">/</span>
-        <span className="text-xs font-mono font-bold text-slate-700">{request.ticketId}</span>
+          <MessageCircle className="w-4 h-4 text-emerald-600" />
+          Send WhatsApp to Staff (US14)
+        </button>
       </div>
 
       {/* Main Grid: Details Left, Update Form Right */}
@@ -139,6 +190,11 @@ export const RequestDetailPage = () => {
                   Ticket ID
                 </span>
                 <span className="text-2xl font-mono font-bold text-blue-700">{request.ticketId}</span>
+                {request.isEscalated && (
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                    Auto-Escalated: 30-Minute SLA Breach
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <StatusBadge status={request.status} />
@@ -168,15 +224,15 @@ export const RequestDetailPage = () => {
                 </span>
               </div>
               <div>
-                <span className="text-xs text-slate-400 block font-medium">Created On</span>
-                <span className="text-xs text-slate-700 font-medium">
-                  {new Date(request.createdAt).toLocaleString()}
+                <span className="text-xs text-slate-400 block font-medium">Assigned Staff (US08)</span>
+                <span className="text-sm font-bold text-blue-700">
+                  {request.assignedToStaff || 'Unassigned'}
                 </span>
               </div>
               <div>
-                <span className="text-xs text-slate-400 block font-medium">Last Updated</span>
-                <span className="text-xs text-slate-700 font-medium">
-                  {new Date(request.updatedAt).toLocaleString()}
+                <span className="text-xs text-slate-400 block font-medium">Logged Timestamp</span>
+                <span className="text-xs text-slate-700 font-mono">
+                  {new Date(request.createdAt).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -189,13 +245,37 @@ export const RequestDetailPage = () => {
                 {request.description}
               </div>
             </div>
+
+            {/* US11: Manager Sign-off Action banner if Resolved */}
+            {request.status === 'Resolved' && (
+              <div className="mt-5 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div>
+                    <span className="text-xs font-bold text-emerald-900 block">
+                      Task Completed by Staff (Awaiting Sign-off)
+                    </span>
+                    <span className="text-xs text-emerald-700">
+                      As Manager, inspect resolution and execute formal complaint closure.
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleManagerSignOff}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs whitespace-nowrap cursor-pointer"
+                >
+                  Sign-Off & Close (US11)
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Audit History Timeline */}
+          {/* Audit History Timeline with Timestamp log (Carried over sprint work) */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
             <div className="flex items-center gap-2 mb-4">
               <History className="w-5 h-5 text-blue-600" />
-              <h2 className="text-base font-bold text-slate-900">Audit History Log</h2>
+              <h2 className="text-base font-bold text-slate-900">Audit History & Timestamp Log</h2>
             </div>
 
             <div className="space-y-3">
@@ -210,7 +290,7 @@ export const RequestDetailPage = () => {
                         Status: <span className="text-slate-500">{h.previousStatus}</span> →{' '}
                         <span className="text-blue-600 font-bold">{h.newStatus}</span>
                       </span>
-                      <span className="text-slate-400 font-normal">
+                      <span className="text-slate-400 font-mono">
                         {new Date(h.createdAt).toLocaleString()}
                       </span>
                     </div>
@@ -233,12 +313,12 @@ export const RequestDetailPage = () => {
           </div>
         </div>
 
-        {/* Right Column: Update & Assign Form */}
+        {/* Right Column: Update & Assign Form (US08 Manager Assignment Screen) */}
         <div className="space-y-6">
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
-              <Shield className="w-5 h-5 text-blue-600" />
-              <h2 className="text-base font-bold text-slate-900">Update Request</h2>
+              <UserCheck className="w-5 h-5 text-blue-600" />
+              <h2 className="text-base font-bold text-slate-900">Assign & Update (US08)</h2>
             </div>
 
             <form onSubmit={handleUpdate} className="space-y-4">
@@ -263,7 +343,7 @@ export const RequestDetailPage = () => {
               {/* Department Assignment */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Assign Department
+                  Department
                 </label>
                 <select
                   value={assignedDepartment}
@@ -273,8 +353,31 @@ export const RequestDetailPage = () => {
                   <option value="">-- None / Select Department --</option>
                   <option value="Housekeeping">Housekeeping</option>
                   <option value="Maintenance">Maintenance</option>
-                  <option value="Room Service">Room Service</option>
+                  <option value="Food & Room Service">Food & Room Service</option>
+                  <option value="Security & Safety">Security & Safety</option>
                   <option value="Front Office">Front Office</option>
+                </select>
+              </div>
+
+              {/* US08: Specific Staff Assignment */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Assign Staff Member (US08)
+                </label>
+                <select
+                  value={assignedToStaff}
+                  onChange={(e) => setAssignedToStaff(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                >
+                  <option value="">-- Unassigned Staff --</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.name}>
+                      {u.name} ({u.role})
+                    </option>
+                  ))}
+                  <option value="Amit Kumar (Housekeeping)">Amit Kumar (Housekeeping)</option>
+                  <option value="Vikram Singh (Maintenance)">Vikram Singh (Maintenance)</option>
+                  <option value="Duty Attendant">Duty Attendant</option>
                 </select>
               </div>
 
@@ -303,11 +406,11 @@ export const RequestDetailPage = () => {
                   rows="3"
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="e.g. Assigned to electrician, linen dispatched, issue resolved..."
+                  placeholder="e.g. Assigned to Vikram, dispatched fresh linens, repairs underway..."
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 ></textarea>
                 <p className="mt-1 text-xs text-slate-400">
-                  This note will be recorded in the audit history.
+                  Logged in audit history with your account name and time.
                 </p>
               </div>
 
@@ -315,14 +418,14 @@ export const RequestDetailPage = () => {
               <button
                 type="submit"
                 disabled={updating}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-xs transition-colors disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-xs transition-colors disabled:opacity-60 cursor-pointer"
               >
                 {updating ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4" />
-                    Save & Update Status
+                    Save & Update Ticket
                   </>
                 )}
               </button>
@@ -333,4 +436,3 @@ export const RequestDetailPage = () => {
     </div>
   );
 };
-

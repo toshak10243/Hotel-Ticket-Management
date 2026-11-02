@@ -4,25 +4,33 @@ import api from '../services/api';
 import Swal from 'sweetalert2';
 import {
   Send,
-  Building2,
-  Clock,
   AlertCircle,
-  HelpCircle,
-  Sparkles,
   Bed,
-  CheckCircle2
+  CheckCircle2,
+  Wrench,
+  Shield,
+  Utensils,
+  Sparkles,
+  PhoneCall,
+  HelpCircle
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export const GuestRequestPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
-  const [formData, setFormData] = useState({
-    roomNumber: '',
-    category: 'Housekeeping',
-    requestType: 'ServiceRequest',
-    description: '',
-    priority: 'Low',
+  // US05: Remember room number in sessionStorage
+  const [formData, setFormData] = useState(() => {
+    const savedRoom = sessionStorage.getItem('arya_room_number') || '';
+    return {
+      roomNumber: savedRoom,
+      category: 'Housekeeping',
+      requestType: 'ServiceRequest',
+      description: '',
+      priority: 'Low',
+    };
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -31,12 +39,23 @@ export const GuestRequestPage = () => {
     const roomFromUrl = searchParams.get('room');
     if (roomFromUrl) {
       setFormData((prev) => ({ ...prev, roomNumber: roomFromUrl }));
+      sessionStorage.setItem('arya_room_number', roomFromUrl);
     }
   }, [searchParams]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'roomNumber') {
+        sessionStorage.setItem('arya_room_number', value);
+      }
+      return updated;
+    });
+  };
+
+  const handleCategorySelect = (catKey) => {
+    setFormData((prev) => ({ ...prev, category: catKey }));
   };
 
   const handleSubmit = async (e) => {
@@ -66,15 +85,16 @@ export const GuestRequestPage = () => {
     try {
       const response = await api.post('/requests', formData);
       const createdRequest = response.data.request;
+      const estimatedTime = response.data.estimatedResponseTime || '30 minutes';
 
       Swal.fire({
         icon: 'success',
         title: 'Request Registered!',
-        text: `Ticket ID: ${createdRequest.ticketId}. Our staff has been alerted.`,
+        text: `Ticket ID: ${createdRequest.ticketId}. Expected response within ${estimatedTime}.`,
         confirmButtonColor: '#2563eb',
       }).then(() => {
         navigate(`/guest/confirmation?ticketId=${createdRequest.ticketId}`, {
-          state: { request: createdRequest },
+          state: { request: createdRequest, estimatedResponseTime: estimatedTime },
         });
       });
     } catch (error) {
@@ -90,31 +110,40 @@ export const GuestRequestPage = () => {
     }
   };
 
+  // Category Selector Cards with Explicit Text Labels + Icons (Resolves Pilot Guest Confusion Feedback)
+  const categoryCards = [
+    { id: 'Housekeeping', label: 'Housekeeping', desc: 'Cleaning, linen & towels', icon: Sparkles },
+    { id: 'Maintenance', label: 'Maintenance', desc: 'AC, plumbing & electricity', icon: Wrench },
+    { id: 'Food', label: 'Food & Dining', desc: 'Room service & beverages', icon: Utensils },
+    { id: 'Safety', label: 'Safety & Security', desc: 'Door locks, keycard & safety', icon: Shield },
+    { id: 'FrontOffice', label: 'Front Office', desc: 'Luggage & wake-up calls', icon: PhoneCall },
+    { id: 'Other', label: 'Other Inquiries', desc: 'General assistance', icon: HelpCircle },
+  ];
+
   return (
     <div className="max-w-2xl mx-auto">
       {/* Header Banner */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs mb-6">
         <div className="flex items-center gap-3 mb-2">
           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-            Guest Self-Service Portal
+            {t('portalTag')}
           </span>
-          <span className="text-xs text-slate-500 font-medium">Hotel Arya Niwas, Jaipur</span>
+          <span className="text-xs text-slate-500 font-medium">{t('hotelName')}</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-          How May We Assist You Today?
+          {t('howMayWeHelp')}
         </h1>
         <p className="mt-2 text-slate-600 text-sm leading-relaxed">
-          Submit your room service request or maintenance complaint directly to our hotel department. 
-          Our staff receives instant notifications to attend to your room.
+          {t('formSubtitle')}
         </p>
       </div>
 
       {/* Main Request Form */}
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-        {/* Room Number */}
+        {/* Room Number (US05: Session remembered) */}
         <div>
           <label htmlFor="roomNumber" className="block text-sm font-semibold text-slate-800 mb-1.5">
-            Room Number <span className="text-rose-500">*</span>
+            {t('roomNumber')} <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -123,91 +152,111 @@ export const GuestRequestPage = () => {
               name="roomNumber"
               value={formData.roomNumber}
               onChange={handleChange}
-              placeholder="e.g. 101, 204, 305"
+              placeholder={t('roomPlaceholder')}
               required
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-semibold"
             />
             <Bed className="w-5 h-5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            If you scanned the QR code from your room table, this is pre-filled automatically.
+            {t('roomHelp')}
           </p>
         </div>
 
-        {/* Request Nature: Request vs Complaint */}
+        {/* Request Type: Service Request vs Complaint */}
         <div>
           <label className="block text-sm font-semibold text-slate-800 mb-2">
-            Request Type <span className="text-rose-500">*</span>
+            {t('requestType')} <span className="text-rose-500">*</span>
           </label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setFormData({ ...formData, requestType: 'ServiceRequest' })}
-              className={`p-3.5 rounded-xl border text-left transition-all ${
+              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                 formData.requestType === 'ServiceRequest'
                   ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/20'
                   : 'border-slate-200 hover:border-slate-300 bg-white'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm text-slate-900">Service Request</span>
+                <span className="font-semibold text-sm text-slate-900">{t('serviceRequest')}</span>
                 {formData.requestType === 'ServiceRequest' && (
                   <CheckCircle2 className="w-4 h-4 text-blue-600" />
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-1">Linen, cleaning, amenities, water, food orders</p>
+              <p className="text-xs text-slate-500 mt-1">{t('serviceDesc')}</p>
             </button>
 
             <button
               type="button"
               onClick={() => setFormData({ ...formData, requestType: 'Complaint' })}
-              className={`p-3.5 rounded-xl border text-left transition-all ${
+              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                 formData.requestType === 'Complaint'
                   ? 'border-rose-600 bg-rose-50/60 ring-2 ring-rose-500/20'
                   : 'border-slate-200 hover:border-slate-300 bg-white'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm text-slate-900">Complaint</span>
+                <span className="font-semibold text-sm text-slate-900">{t('complaint')}</span>
                 {formData.requestType === 'Complaint' && (
                   <AlertCircle className="w-4 h-4 text-rose-600" />
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-1">Broken appliance, AC issue, plumbing fault, noise</p>
+              <p className="text-xs text-slate-500 mt-1">{t('complaintDesc')}</p>
             </button>
           </div>
         </div>
 
-        {/* Category Dropdown */}
+        {/* US02: Category Selector with Clear Text Labels (Week 5 Feedback Solution) */}
         <div>
-          <label htmlFor="category" className="block text-sm font-semibold text-slate-800 mb-1.5">
-            Department / Category <span className="text-rose-500">*</span>
+          <label className="block text-sm font-semibold text-slate-800 mb-2">
+            {t('categoryDept')} <span className="text-rose-500">*</span>
           </label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
-          >
-            <option value="Housekeeping">Housekeeping (Cleaning, towels, bed linen, toiletries)</option>
-            <option value="Maintenance">Maintenance (Air conditioner, TV, electrical, plumbing)</option>
-            <option value="RoomService">Room Service (Food delivery, tea/coffee, cutlery)</option>
-            <option value="FrontOffice">Front Office (Wake up calls, luggage assistance, billing)</option>
-            <option value="Other">Other / General inquiry</option>
-          </select>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {categoryCards.map((cat) => {
+              const Icon = cat.icon;
+              const isSelected = formData.category === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => handleCategorySelect(cat.id)}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    isSelected
+                      ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-500/20 shadow-xs'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1.5">
+                    <div className={`p-1.5 rounded-lg ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    {isSelected && <span className="w-2 h-2 rounded-full bg-blue-600"></span>}
+                  </div>
+                  <div>
+                    <span className="block text-xs font-bold text-slate-900 leading-tight">
+                      {cat.label}
+                    </span>
+                    <span className="block text-[11px] text-slate-500 mt-0.5 leading-tight">
+                      {cat.desc}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Priority Selection */}
         <div>
           <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-            Priority Level
+            {t('priorityLevel')}
           </label>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { id: 'Low', label: 'Low', desc: 'Can wait a while' },
-              { id: 'Medium', label: 'Medium', desc: 'Standard turnaround' },
-              { id: 'High', label: 'High', desc: 'Urgent attention' },
+              { id: 'Low', label: t('low'), desc: t('lowDesc') },
+              { id: 'Medium', label: t('medium'), desc: t('mediumDesc') },
+              { id: 'High', label: t('high'), desc: t('highDesc') },
             ].map((p) => (
               <label
                 key={p.id}
@@ -235,7 +284,7 @@ export const GuestRequestPage = () => {
         {/* Description Field */}
         <div>
           <label htmlFor="description" className="block text-sm font-semibold text-slate-800 mb-1.5">
-            Details / Description <span className="text-rose-500">*</span>
+            {t('description')} <span className="text-rose-500">*</span>
           </label>
           <textarea
             id="description"
@@ -243,9 +292,9 @@ export const GuestRequestPage = () => {
             rows="4"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Please detail your request or describe any issue in detail..."
+            placeholder={t('descPlaceholder')}
             required
-            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           ></textarea>
         </div>
 
@@ -254,17 +303,17 @@ export const GuestRequestPage = () => {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-xs transition-colors disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-xs transition-colors disabled:opacity-60 cursor-pointer"
           >
             {submitting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Submitting Request...
+                {t('submitting')}
               </>
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                Submit Request
+                {t('submitBtn')}
               </>
             )}
           </button>
@@ -273,4 +322,3 @@ export const GuestRequestPage = () => {
     </div>
   );
 };
-

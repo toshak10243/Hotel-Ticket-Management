@@ -7,6 +7,7 @@ const {
   getRequestById,
   updateRequest,
   getRequestHistory,
+  triggerEscalationCheck,
 } = require('../controllers/requestController');
 const { authenticate } = require('../middleware/auth');
 
@@ -19,6 +20,6 @@ router.get('/', authenticate, getAllRequests);
 router.get('/:id', authenticate, getRequestById);
 router.patch('/:id', authenticate, updateRequest);
 router.get('/:id/history', authenticate, getRequestHistory);
+router.post('/check-escalations', authenticate, triggerEscalationCheck);
 
 module.exports = router;
-

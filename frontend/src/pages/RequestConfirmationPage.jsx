@@ -8,16 +8,19 @@ import {
   Clock,
   ArrowRight,
   RefreshCw,
-  Building2,
-  Calendar,
-  AlertTriangle
+  AlertTriangle,
+  Timer
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { useLanguage } from '../context/LanguageContext';
 
 export const RequestConfirmationPage = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const { t } = useLanguage();
+
   const ticketId = searchParams.get('ticketId') || location.state?.request?.ticketId;
+  const initialResponseTime = location.state?.estimatedResponseTime || '30 minutes';
 
   const [request, setRequest] = useState(location.state?.request || null);
   const [loading, setLoading] = useState(!location.state?.request);
@@ -80,23 +83,29 @@ export const RequestConfirmationPage = () => {
         <div className="w-14 h-14 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="w-8 h-8" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900">Request Successfully Received</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t('reqReceived')}</h1>
         <p className="text-slate-600 text-sm mt-1 max-w-md mx-auto">
-          Our front desk and maintenance team have received your request and will attend to Room {request?.roomNumber || 'your room'} shortly.
+          {t('reqReceivedSubtitle', { room: request?.roomNumber || 'your room' })}
         </p>
+
+        {/* US04: Guaranteed Response Time Display */}
+        <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 text-xs font-bold text-blue-700">
+          <Timer className="w-4 h-4 text-blue-600" />
+          <span>{t('expectedSla', { time: initialResponseTime })}</span>
+        </div>
 
         {/* Ticket ID Highlight Box */}
         <div className="mt-6 bg-slate-50 border border-slate-200 rounded-xl p-4 max-w-sm mx-auto flex items-center justify-between">
           <div className="text-left">
-            <span className="text-xs text-slate-500 font-medium uppercase tracking-wider block">Your Ticket ID</span>
+            <span className="text-xs text-slate-500 font-medium uppercase tracking-wider block">{t('ticketIdTag')}</span>
             <span className="text-xl font-mono font-bold text-blue-700">{ticketId}</span>
           </div>
           <button
             onClick={copyTicketId}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg text-xs font-semibold shadow-xs transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             <Copy className="w-3.5 h-3.5" />
-            Copy
+            {t('copy')}
           </button>
         </div>
       </div>
@@ -104,14 +113,14 @@ export const RequestConfirmationPage = () => {
       {/* Submitted Details Card */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-900">Submitted Request Summary</h2>
+          <h2 className="text-lg font-bold text-slate-900">{t('submittedSummary')}</h2>
           <button
             onClick={fetchDetails}
             disabled={loading}
-            className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium"
+            className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh Status
+            {t('refreshStatus')}
           </button>
         </div>
 
@@ -165,18 +174,17 @@ export const RequestConfirmationPage = () => {
             to={`/guest/track?ticketId=${ticketId}`}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors shadow-xs"
           >
-            Live Tracking View
+            {t('liveTrackingBtn')}
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             to="/guest/request"
             className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-colors"
           >
-            Submit Another Request
+            {t('submitAnother')}
           </Link>
         </div>
       </div>
     </div>
   );
 };
-

@@ -4,17 +4,18 @@ import api from '../services/api';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import {
   Search,
-  Clock,
   History,
-  Building2,
   AlertCircle,
-  FileText,
-  User,
-  ArrowRight
+  Clock,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export const TrackRequestPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useLanguage();
+
   const [ticketInput, setTicketInput] = useState(searchParams.get('ticketId') || '');
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -62,9 +63,9 @@ export const TrackRequestPage = () => {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Search Header */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Track Your Request Status</h1>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('trackTitle')}</h1>
         <p className="mt-1 text-slate-600 text-sm">
-          Enter the unique Ticket ID provided upon submission (e.g. AN-2026-1011) to view real-time resolution updates.
+          {t('trackSubtitle')}
         </p>
 
         <form
@@ -87,14 +88,14 @@ export const TrackRequestPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-xs transition-colors disabled:opacity-60"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-xs transition-colors disabled:opacity-60 cursor-pointer"
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <>
                 <Search className="w-4 h-4" />
-                Track Status
+                {t('trackBtn')}
               </>
             )}
           </button>
@@ -116,9 +117,17 @@ export const TrackRequestPage = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
               <div>
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                  Ticket Reference
+                  {t('ticketRef')}
                 </span>
-                <span className="text-2xl font-mono font-bold text-blue-700">{request.ticketId}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl font-mono font-bold text-blue-700">{request.ticketId}</span>
+                  {request.isEscalated && (
+                    <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Escalated (30-min SLA)
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <StatusBadge status={request.status} />
@@ -184,11 +193,11 @@ export const TrackRequestPage = () => {
             </div>
           </div>
 
-          {/* Activity / Progress Log */}
+          {/* Activity / Timestamp Progress Log (Carried-over Sprint 1 to Sprint 2 requirement) */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
             <div className="flex items-center gap-2 mb-6">
               <History className="w-5 h-5 text-blue-600" />
-              <h2 className="text-lg font-bold text-slate-900">Request Progress Log</h2>
+              <h2 className="text-lg font-bold text-slate-900">{t('progressLog')}</h2>
             </div>
 
             {request.history && request.history.length > 0 ? (
@@ -204,7 +213,7 @@ export const TrackRequestPage = () => {
                         <span className="font-semibold text-slate-700">
                           Status: <span className="text-blue-600 font-bold">{hist.newStatus}</span>
                         </span>
-                        <span>{new Date(hist.createdAt).toLocaleString()}</span>
+                        <span className="font-mono">{new Date(hist.createdAt).toLocaleString()}</span>
                       </div>
                       <p className="text-sm text-slate-700 mt-1">
                         {hist.remarks || 'Status updated by hotel personnel.'}
@@ -222,4 +231,3 @@ export const TrackRequestPage = () => {
     </div>
   );
 };
-
