@@ -1,0 +1,82 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  Admin
+  Manager
+  Staff
+}
+
+enum RequestType {
+  ServiceRequest
+  Complaint
+}
+
+enum Category {
+  Housekeeping
+  Maintenance
+  RoomService
+  FrontOffice
+  Other
+}
+
+enum Priority {
+  Low
+  Medium
+  High
+}
+
+enum RequestStatus {
+  Pending
+  Assigned
+  InProgress
+  Resolved
+  Closed
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(Staff)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  histories RequestHistory[]
+}
+
+model ServiceRequest {
+  id                 Int            @id @default(autoincrement())
+  ticketId           String         @unique
+  roomNumber         String
+  category           Category
+  requestType        RequestType
+  description        String
+  priority           Priority       @default(Low)
+  status             RequestStatus  @default(Pending)
+  assignedDepartment String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  history            RequestHistory[]
+}
+
+model RequestHistory {
+  id             Int            @id @default(autoincrement())
+  requestId      Int
+  request        ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  previousStatus RequestStatus
+  newStatus      RequestStatus
+  remarks        String?
+  updatedById    Int?
+  updatedBy      User?          @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime       @default(now())
+}
+
