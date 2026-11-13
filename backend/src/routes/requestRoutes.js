@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createGuestRequest,
   trackGuestRequest,
+  getRoomRequests,
   getAllRequests,
   getRequestById,
   updateRequest,
@@ -14,6 +15,7 @@ const { authenticate } = require('../middleware/auth');
 // Guest Endpoints (No authentication needed)
 router.post('/', createGuestRequest);
 router.get('/track/:ticketId', trackGuestRequest);
+router.get('/room/:roomNumber', getRoomRequests); // Unified QR endpoint to track room tickets
 
 // Staff / Admin Endpoints (JWT authentication required)
 router.get('/', authenticate, getAllRequests);

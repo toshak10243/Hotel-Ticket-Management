@@ -12,13 +12,20 @@ import {
   RefreshCw,
   Bell,
   AlertTriangle,
-  Flame
+  Flame,
+  Bed,
+  Users,
+  Building2,
+  PieChart
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 export const DashboardOverview = () => {
   const [stats, setStats] = useState(null);
   const [recentRequests, setRecentRequests] = useState([]);
+  const [roomAnalytics, setRoomAnalytics] = useState([]);
+  const [departmentStats, setDepartmentStats] = useState([]);
+  const [staffWorkload, setStaffWorkload] = useState([]);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
@@ -26,7 +33,10 @@ export const DashboardOverview = () => {
     try {
       const res = await api.get('/dashboard/stats');
       setStats(res.data.stats);
-      setRecentRequests(res.data.recentRequests);
+      setRecentRequests(res.data.recentRequests || []);
+      setRoomAnalytics(res.data.roomAnalytics || []);
+      setDepartmentStats(res.data.departmentStats || []);
+      setStaffWorkload(res.data.staffWorkload || []);
     } catch (err) {
       console.error('Failed to load dashboard stats:', err);
     } finally {
@@ -135,14 +145,14 @@ export const DashboardOverview = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Live Staff Dashboard</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Enterprise Hotel Operations Dashboard</h1>
             <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               LIVE
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-0.5">
-            Auto-refreshing queue & 30-min SLA escalation monitor for Hotel Arya Niwas.
+            Hotel Arya Niwas operations queue, worker workload cap (Max 5), and repeat complaint analytics.
           </p>
         </div>
 
@@ -200,6 +210,91 @@ export const DashboardOverview = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* ENTERPRISE LEVEL ANALYTICS: Room Hotspots & Staff Workload */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Repeat Complaints & Problem Rooms */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <Bed className="w-4 h-4 text-rose-600" />
+              <h3 className="font-bold text-slate-900 text-sm">Room Analytics (Repeat Complaints)</h3>
+            </div>
+            <span className="text-[11px] text-slate-400">Hotel Maintenance Radar</span>
+          </div>
+          <div className="mt-3 space-y-2.5">
+            {roomAnalytics.length === 0 ? (
+              <p className="text-xs text-slate-400 py-3 text-center">No room data recorded yet.</p>
+            ) : (
+              roomAnalytics.map((rm) => (
+                <div
+                  key={rm.roomNumber}
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900 text-xs">Room {rm.roomNumber}</span>
+                    {rm.isHighAttention && (
+                      <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
+                        Frequent Issues
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600">
+                    {rm.totalIssues} {rm.totalIssues === 1 ? 'ticket' : 'tickets'} logged
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Staff Workload Real-Time Cap (Max 5 Limit) */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-blue-600" />
+              <h3 className="font-bold text-slate-900 text-sm">Staff Workload Capacity (Limit: 5/worker)</h3>
+            </div>
+            <Link to="/dashboard/staff-management" className="text-[11px] text-blue-600 font-bold hover:underline">
+              Manage Staff
+            </Link>
+          </div>
+          <div className="mt-3 space-y-2.5">
+            {staffWorkload.length === 0 ? (
+              <p className="text-xs text-slate-400 py-3 text-center">No staff accounts active.</p>
+            ) : (
+              staffWorkload.map((sw) => (
+                <div key={sw.id} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="font-bold text-slate-800">{sw.name}</span>
+                    {sw.isOccupied ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
+                        Occupied (5/5 Full)
+                      </span>
+                    ) : (
+                      <span className="text-slate-500 font-medium">
+                        {sw.activeCount}/5 Active ({sw.resolvedCount} solved)
+                      </span>
+                    )}
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={`h-full ${
+                        sw.isOccupied
+                          ? 'bg-rose-500'
+                          : sw.activeCount >= 3
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${sw.capacityPercent}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Priority Sorted Table Section (US06, US09) */}

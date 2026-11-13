@@ -9,7 +9,9 @@ import {
   AlertTriangle,
   UserCheck,
   ShieldCheck,
-  MessageCircle
+  MessageCircle,
+  Flame,
+  UserX
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -62,8 +64,22 @@ export const RequestDetailPage = () => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    setUpdating(true);
 
+    // Check if the selected staff is occupied at max 5 limit
+    if (assignedToStaff && assignedToStaff !== request.assignedToStaff) {
+      const selectedUserObj = users.find((u) => u.name === assignedToStaff);
+      if (selectedUserObj && selectedUserObj.isOccupied) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Worker Occupied (Max Limit Reached)',
+          text: `${assignedToStaff} currently has ${selectedUserObj.activeWorkload}/5 active tasks. Please assign to another staff member.`,
+          confirmButtonColor: '#e11d48',
+        });
+        return;
+      }
+    }
+
+    setUpdating(true);
     try {
       const payload = {
         status,
@@ -85,11 +101,14 @@ export const RequestDetailPage = () => {
         showConfirmButton: false,
         timer: 2000,
       });
+
+      // Refresh staff loads
+      fetchRequestAndStaff();
     } catch (err) {
       console.error('Update request error:', err);
       Swal.fire({
         icon: 'error',
-        title: 'Update Failed',
+        title: 'Assignment Failed',
         text: err.response?.data?.error || 'Failed to update request',
       });
     } finally {
@@ -125,11 +144,12 @@ export const RequestDetailPage = () => {
 
   // US14: WhatsApp dispatch
   const handleWhatsAppAlert = () => {
-    const defaultNumber = '919829012345';
+    const assignedUser = users.find((u) => u.name === request.assignedToStaff);
+    const phoneNumber = assignedUser?.phone || '919829012345';
     const message = encodeURIComponent(
       `*Hotel Arya Niwas Staff Alert*\nTicket: ${request.ticketId}\nRoom: ${request.roomNumber}\nDept: ${request.assignedDepartment || request.category}\nStaff: ${request.assignedToStaff || 'Duty Attendant'}\nIssue: ${request.description}\nStatus: ${request.status}`
     );
-    window.open(`https://wa.me/${defaultNumber}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
   if (loading) {
@@ -313,7 +333,7 @@ export const RequestDetailPage = () => {
           </div>
         </div>
 
-        {/* Right Column: Update & Assign Form (US08 Manager Assignment Screen) */}
+        {/* Right Column: Update & Assign Form (US08 Manager Assignment with WORKLOAD CAP LIMIT) */}
         <div className="space-y-6">
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
@@ -359,26 +379,39 @@ export const RequestDetailPage = () => {
                 </select>
               </div>
 
-              {/* US08: Specific Staff Assignment */}
+              {/* US08 & WORKLOAD CAP: Staff Member selection with max 5 capacity indicator */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Assign Staff Member (US08)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Assign Staff (Max 5 Workload)
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-medium">Load Limit: 5</span>
+                </div>
                 <select
                   value={assignedToStaff}
                   onChange={(e) => setAssignedToStaff(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 >
                   <option value="">-- Unassigned Staff --</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.name}>
-                      {u.name} ({u.role})
-                    </option>
-                  ))}
-                  <option value="Amit Kumar (Housekeeping)">Amit Kumar (Housekeeping)</option>
-                  <option value="Vikram Singh (Maintenance)">Vikram Singh (Maintenance)</option>
-                  <option value="Duty Attendant">Duty Attendant</option>
+                  {users.map((u) => {
+                    const activeCount = u.activeWorkload ?? 0;
+                    const isOccupied = u.isOccupied || activeCount >= 5;
+                    const isCurrentAssigned = request.assignedToStaff === u.name;
+                    return (
+                      <option
+                        key={u.id}
+                        value={u.name}
+                        disabled={isOccupied && !isCurrentAssigned}
+                        className={isOccupied && !isCurrentAssigned ? 'text-rose-500 font-semibold bg-rose-50' : ''}
+                      >
+                        {u.name} — {isOccupied && !isCurrentAssigned ? `[OCCUPIED: ${activeCount}/5 Active]` : `[Load: ${activeCount}/5 Active]`}
+                      </option>
+                    );
+                  })}
                 </select>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Workers with 5 active tasks are automatically disabled to prevent overload.
+                </p>
               </div>
 
               {/* Priority */}

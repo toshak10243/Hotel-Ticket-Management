@@ -23,9 +23,73 @@ const getDashboardStats = async (req, res) => {
     });
 
     const recentRequests = await prisma.serviceRequest.findMany({
-      take: 6,
+      take: 8,
       orderBy: { createdAt: 'desc' },
     });
+
+    // Enterprise Analytics 1: Room-wise Complaint Analysis (Repeat issues detection)
+    const roomGroups = await prisma.serviceRequest.groupBy({
+      by: ['roomNumber'],
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _count: {
+          id: 'desc',
+        },
+      },
+      take: 5,
+    });
+
+    const roomAnalytics = roomGroups.map((g) => ({
+      roomNumber: g.roomNumber,
+      totalIssues: g._count.id,
+      isHighAttention: g._count.id >= 3,
+    }));
+
+    // Enterprise Analytics 2: Department breakdown
+    const departmentGroups = await prisma.serviceRequest.groupBy({
+      by: ['category'],
+      _count: {
+        id: true,
+      },
+    });
+
+    const departmentStats = departmentGroups.map((d) => ({
+      category: d.category,
+      count: d._count.id,
+    }));
+
+    // Enterprise Analytics 3: Staff Active Workload Overview
+    const staffMembers = await prisma.user.findMany({
+      where: { role: 'Staff' },
+      select: { id: true, name: true, phone: true },
+    });
+
+    const staffWorkload = await Promise.all(
+      staffMembers.map(async (s) => {
+        const active = await prisma.serviceRequest.count({
+          where: {
+            assignedToStaff: s.name,
+            status: { in: ['Assigned', 'InProgress'] },
+          },
+        });
+        const resolved = await prisma.serviceRequest.count({
+          where: {
+            assignedToStaff: s.name,
+            status: { in: ['Resolved', 'Closed'] },
+          },
+        });
+        return {
+          id: s.id,
+          name: s.name,
+          activeCount: active,
+          resolvedCount: resolved,
+          capacityPercent: Math.min(100, (active / 5) * 100),
+          isOccupied: active >= 5,
+        };
+      })
+    );
 
     return res.json({
       stats: {
@@ -37,6 +101,9 @@ const getDashboardStats = async (req, res) => {
         highPriorityRequests,
       },
       recentRequests,
+      roomAnalytics,
+      departmentStats,
+      staffWorkload,
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
@@ -47,4 +114,3 @@ const getDashboardStats = async (req, res) => {
 module.exports = {
   getDashboardStats,
 };
-

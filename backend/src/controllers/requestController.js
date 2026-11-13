@@ -61,7 +61,7 @@ const createGuestRequest = async (req, res) => {
   }
 };
 
-// GET /api/requests/track/:ticketId (Guest tracking)
+// GET /api/requests/track/:ticketId (Guest tracking by Ticket ID)
 const trackGuestRequest = async (req, res) => {
   try {
     const { ticketId } = req.params;
@@ -93,6 +93,42 @@ const trackGuestRequest = async (req, res) => {
   } catch (error) {
     console.error('Track request error:', error);
     return res.status(500).json({ error: 'Error tracking request' });
+  }
+};
+
+// GET /api/requests/room/:roomNumber (Unified QR Flow: Fetch all requests & complaints of the room)
+const getRoomRequests = async (req, res) => {
+  try {
+    const { roomNumber } = req.params;
+    if (!roomNumber) {
+      return res.status(400).json({ error: 'Room number is required' });
+    }
+
+    const requests = await prisma.serviceRequest.findMany({
+      where: { roomNumber: String(roomNumber).trim() },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        history: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            previousStatus: true,
+            newStatus: true,
+            remarks: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return res.json({
+      roomNumber,
+      totalRequests: requests.length,
+      requests,
+    });
+  } catch (error) {
+    console.error('Get room requests error:', error);
+    return res.status(500).json({ error: 'Failed to retrieve room requests' });
   }
 };
 
@@ -185,6 +221,7 @@ const getRequestById = async (req, res) => {
 };
 
 // PATCH /api/requests/:id (Staff/Manager/Admin update & assignment & sign-off)
+// Enforces MAX 5 WORKLOAD limit rule for staff assignment
 const updateRequest = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -197,6 +234,23 @@ const updateRequest = async (req, res) => {
     const existing = await prisma.serviceRequest.findUnique({ where: { id } });
     if (!existing) {
       return res.status(404).json({ error: 'Request not found' });
+    }
+
+    // WORKLOAD RULE VALIDATION: If assigning to a staff member, verify active count is < 5
+    if (assignedToStaff && assignedToStaff !== existing.assignedToStaff) {
+      const activeCount = await prisma.serviceRequest.count({
+        where: {
+          assignedToStaff,
+          status: { in: ['Assigned', 'InProgress'] },
+          id: { not: id }, // exclude current ticket if already assigned
+        },
+      });
+
+      if (activeCount >= 5) {
+        return res.status(400).json({
+          error: `Cannot assign ticket to ${assignedToStaff}. Staff member is currently OCCUPIED at maximum capacity (${activeCount}/5 active tickets). Please select another staff member.`,
+        });
+      }
     }
 
     const updateData = {};
@@ -289,6 +343,7 @@ const triggerEscalationCheck = async (req, res) => {
 module.exports = {
   createGuestRequest,
   trackGuestRequest,
+  getRoomRequests,
   getAllRequests,
   getRequestById,
   updateRequest,
