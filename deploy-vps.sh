@@ -1,35 +1,39 @@
 #!/bin/bash
-# Hostinger VPS 1-Click Deployment Script for Hotel Arya Niwas
+# Hostinger VPS Direct IP & Domain Deployment Script
+# IP: 200.234.46.234
 # Domain: hotel-arya.sbs
 
 set -e
 
 echo "=========================================================="
-echo " Starting Hotel Arya Niwas Deployment on Hostinger VPS"
-echo " Domain: hotel-arya.sbs"
+echo " Starting Hotel Arya Niwas Live Deployment on VPS"
+echo " Target IP: 200.234.46.234"
+echo " Target Domain: hotel-arya.sbs"
 echo "=========================================================="
 
-# 1. Update and install prerequisites
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl git nginx postgresql postgresql-contrib certbot python3-certbot-nginx
+# 1. Update and install packages
+echo "Updating packages..."
+sudo apt update -y
+sudo apt install -y curl git nginx postgresql postgresql-contrib
 
-# 2. Install Node.js 20 LTS
+# 2. Install Node.js 20 LTS & PM2
 if ! command -v node &> /dev/null; then
-    echo "Installing Node.js 20..."
+    echo "Installing Node.js 20 LTS..."
     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt install -y nodejs
 fi
 
-# 3. Install PM2 globally
 sudo npm install -g pm2
 
-# 4. Configure PostgreSQL
-echo "Setting up PostgreSQL Database..."
+# 3. Setup PostgreSQL Database
+echo "Configuring PostgreSQL Database..."
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
 sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'Root@123';" || true
 sudo -u postgres psql -c "CREATE DATABASE arya_niwas_db;" || true
 
-# 5. Clone / Setup Project in /var/www/hotel-arya
-echo "Cloning repository..."
+# 4. Clone / Pull Project
+echo "Deploying source code to /var/www/hotel-arya..."
 sudo mkdir -p /var/www/hotel-arya
 sudo chown -R $USER:$USER /var/www/hotel-arya
 
@@ -40,8 +44,8 @@ else
     git pull origin main
 fi
 
-# 6. Setup Backend
-echo "Configuring Backend..."
+# 5. Backend Setup
+echo "Setting up Backend..."
 cd /var/www/hotel-arya/backend
 
 cat <<EOT > .env
@@ -54,30 +58,34 @@ npm install
 npx prisma db push
 npm run seed
 
-# Start/Restart backend using PM2
+# Run Backend with PM2 (daemon)
 pm2 stop arya-backend || true
 pm2 start src/server.js --name arya-backend
 pm2 save
 pm2 startup systemd -u $USER --hp /home/$USER || true
 
-# 7. Setup Frontend
+# 6. Frontend Setup
 echo "Building Frontend for Production..."
 cd /var/www/hotel-arya/frontend
 npm install
 npm run build
 
-# 8. Configure Nginx
-echo "Configuring Nginx Reverse Proxy..."
+# 7. Configure Nginx to serve on BOTH VPS IP and Domain
+echo "Configuring Nginx Reverse Proxy for 200.234.46.234 and hotel-arya.sbs..."
 sudo tee /etc/nginx/sites-available/hotel-arya << 'EOF'
 server {
-    server_name hotel-arya.sbs www.hotel-arya.sbs;
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name 200.234.46.234 hotel-arya.sbs www.hotel-arya.sbs _;
 
+    # Frontend Static SPA
     location / {
         root /var/www/hotel-arya/frontend/dist;
         index index.html index.htm;
         try_files $uri $uri/ /index.html;
     }
 
+    # Backend API Proxy
     location /api/ {
         proxy_pass http://127.0.0.1:5000/api/;
         proxy_http_version 1.1;
@@ -90,7 +98,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    client_max_body_size 20M;
+    client_max_body_size 25M;
 }
 EOF
 
@@ -99,12 +107,9 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl restart nginx
 
-# 9. Setup Free SSL (HTTPS)
-echo "Setting up SSL Certificate via Let's Encrypt..."
-sudo certbot --nginx -d hotel-arya.sbs -d www.hotel-arya.sbs --non-interactive --agree-tos -m admin@aryaniwas.com --redirect || true
-
 echo "=========================================================="
-echo " DEPLOYMENT SUCCESSFUL!"
-echo " Website Live at: https://hotel-arya.sbs"
+echo " DEPLOYMENT FINISHED SUCCESSFULLY!"
+echo " "
+echo " 1. Live on Direct IP: http://200.234.46.234"
+echo " 2. Live on Domain:    http://hotel-arya.sbs (once approved)"
 echo "=========================================================="
-EOT
