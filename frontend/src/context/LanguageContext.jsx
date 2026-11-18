@@ -112,7 +112,24 @@ const translations = {
     guestServiceMaintenance: 'Guest Service & Maintenance',
     scanHelpText: 'Scan with any phone camera to request housekeeping, room service, or report an issue.',
     printQrBtn: 'Print QR Standee',
-    testOpenLink: 'Test Open Room URL',
+    testOpenLink: 'Test Scan / Open Link Directly',
+    qrDestinationHeading: 'QR Code Destination Link',
+    qrDestinationDesc: 'This is the exact deep-link encoded in the QR code:',
+    howItWorksHeading: 'How It Works:',
+    howItWorksStep1: 'Hotel places the printable standee in Room {room}.',
+    howItWorksStep2: 'The guest points their smartphone camera at the QR code.',
+    howItWorksStep3: 'The browser automatically opens the service request portal.',
+    howItWorksStep4: 'Room {room} is pre-populated in the form.',
+    howItWorksStep5: 'The guest submits their request or complaint without login.',
+
+    // Confirmation details
+    roomSummaryLabel: 'Room',
+    currentStatusLabel: 'Current Status',
+    departmentLabel: 'Department',
+    priorityLabelTag: 'Priority',
+    detailsRemarksLabel: 'Details & Remarks',
+    noTicketProvidedTitle: 'No Ticket Provided',
+    noTicketProvidedDesc: 'Please submit a new request or use the tracking page to look up an existing ticket.',
   },
   hi: {
     // Nav
@@ -226,6 +243,23 @@ const translations = {
     scanHelpText: 'हाउसकीपिंग, रूम सर्विस या शिकायत के लिए किसी भी फोन कैमरे से स्कैन करें।',
     printQrBtn: 'क्यूआर स्टैंडी प्रिंट करें',
     testOpenLink: 'कमरा लिंक खोलकर देखें',
+    qrDestinationHeading: 'क्यूआर कोड गंतव्य लिंक (Destination Link)',
+    qrDestinationDesc: 'यह क्यूआर कोड में एन्कोड किया गया सटीक वेब लिंक है:',
+    howItWorksHeading: 'यह कैसे कार्य करता है:',
+    howItWorksStep1: 'होटल स्टाफ कमरा नं. {room} में यह प्रिंटेड स्टैंडी लगाता है।',
+    howItWorksStep2: 'अतिथि अपने स्मार्टफोन कैमरे से क्यूआर कोड स्कैन करता है।',
+    howItWorksStep3: 'ब्राउज़र में सेवा पोर्टल सीधे स्वतः खुल जाता है।',
+    howItWorksStep4: 'कमरा नं. {room} फॉर्म में अपने-आप भरा हुआ आता है।',
+    howItWorksStep5: 'अतिथि बिना किसी लॉगिन के तुरंत अनुरोध या शिकायत दर्ज कर सकता है।',
+
+    // Confirmation details
+    roomSummaryLabel: 'कमरा',
+    currentStatusLabel: 'वर्तमान स्थिति',
+    departmentLabel: 'विभाग',
+    priorityLabelTag: 'प्राथमिकता',
+    detailsRemarksLabel: 'विवरण एवं टिप्पणी',
+    noTicketProvidedTitle: 'कोई टिकट नहीं मिला',
+    noTicketProvidedDesc: 'कृपया नया अनुरोध दर्ज करें या ट्रैकिंग पृष्ठ से टिकट खोजें।',
   },
 };
 

@@ -62,15 +62,15 @@ export const RequestConfirmationPage = () => {
     return (
       <div className="max-w-md mx-auto bg-white p-8 rounded-2xl border border-slate-200 text-center">
         <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-        <h2 className="text-xl font-bold text-slate-800">No Ticket Provided</h2>
+        <h2 className="text-xl font-bold text-slate-800">{t('noTicketProvidedTitle')}</h2>
         <p className="text-slate-600 text-sm mt-2">
-          Please submit a new request or use the tracking page to look up an existing ticket.
+          {t('noTicketProvidedDesc')}
         </p>
         <Link
           to="/guest/request"
           className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
         >
-          Submit Request
+          {t('submitRequest')}
         </Link>
       </div>
     );
@@ -130,21 +130,21 @@ export const RequestConfirmationPage = () => {
           <div className="mt-5 space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
               <div>
-                <span className="text-xs text-slate-500 block">Room</span>
-                <span className="font-semibold text-slate-800 text-sm">Room {request.roomNumber}</span>
+                <span className="text-xs text-slate-500 block">{t('roomSummaryLabel')}</span>
+                <span className="font-semibold text-slate-800 text-sm">{t('roomBadge')} {request.roomNumber}</span>
               </div>
               <div>
-                <span className="text-xs text-slate-500 block">Current Status</span>
+                <span className="text-xs text-slate-500 block">{t('currentStatusLabel')}</span>
                 <div className="mt-0.5">
                   <StatusBadge status={request.status} />
                 </div>
               </div>
               <div>
-                <span className="text-xs text-slate-500 block">Department</span>
+                <span className="text-xs text-slate-500 block">{t('departmentLabel')}</span>
                 <span className="font-semibold text-slate-800 text-sm">{request.category}</span>
               </div>
               <div>
-                <span className="text-xs text-slate-500 block">Priority</span>
+                <span className="text-xs text-slate-500 block">{t('priorityLabelTag')}</span>
                 <div className="mt-0.5">
                   <PriorityBadge priority={request.priority} />
                 </div>
@@ -152,7 +152,7 @@ export const RequestConfirmationPage = () => {
             </div>
 
             <div>
-              <span className="text-xs text-slate-500 block font-medium mb-1">Details & Remarks</span>
+              <span className="text-xs text-slate-500 block font-medium mb-1">{t('detailsRemarksLabel')}</span>
               <p className="text-sm text-slate-800 bg-white p-3.5 rounded-lg border border-slate-200 leading-relaxed">
                 {request.description}
               </p>

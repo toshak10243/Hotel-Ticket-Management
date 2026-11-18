@@ -103,9 +103,9 @@ export const QrGeneratorPage = () => {
         {/* URL and Testing Information */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 flex flex-col justify-between shadow-xs">
           <div>
-            <h3 className="font-bold text-slate-900 text-base mb-2">QR Code Destination Link</h3>
+            <h3 className="font-bold text-slate-900 text-base mb-2">{t('qrDestinationHeading')}</h3>
             <p className="text-xs text-slate-500 mb-4">
-              This is the exact deep-link encoded in the QR code:
+              {t('qrDestinationDesc')}
             </p>
 
             <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs font-mono break-all text-slate-700 select-all">
@@ -114,14 +114,14 @@ export const QrGeneratorPage = () => {
 
             <div className="mt-6 space-y-3">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                How It Works:
+                {t('howItWorksHeading')}
               </h4>
               <ul className="text-xs text-slate-600 space-y-2 list-disc pl-4">
-                <li>Hotel places the printable standee in Room {roomNumber}.</li>
-                <li>The guest points their smartphone camera at the QR code.</li>
-                <li>The browser automatically opens the service request portal.</li>
-                <li>Room {roomNumber} is pre-populated in the form.</li>
-                <li>The guest submits their request or complaint without login.</li>
+                <li>{t('howItWorksStep1', { room: roomNumber })}</li>
+                <li>{t('howItWorksStep2')}</li>
+                <li>{t('howItWorksStep3')}</li>
+                <li>{t('howItWorksStep4', { room: roomNumber })}</li>
+                <li>{t('howItWorksStep5')}</li>
               </ul>
             </div>
           </div>
