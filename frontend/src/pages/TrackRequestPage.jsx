@@ -80,7 +80,7 @@ export const TrackRequestPage = () => {
               type="text"
               value={ticketInput}
               onChange={(e) => setTicketInput(e.target.value)}
-              placeholder="Enter Ticket ID (e.g. AN-2026-1011)"
+              placeholder={t('enterTicketPlaceholder')}
               className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
             />
             <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
@@ -124,7 +124,7 @@ export const TrackRequestPage = () => {
                   {request.isEscalated && (
                     <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200 flex items-center gap-1">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      Escalated (30-min SLA)
+                      {t('escalatedBadge')}
                     </span>
                   )}
                 </div>
@@ -138,12 +138,18 @@ export const TrackRequestPage = () => {
             {/* Stepper Timeline Visualizer */}
             <div className="py-6 border-b border-slate-100">
               <div className="grid grid-cols-5 text-center text-xs">
-                {['Pending', 'Assigned', 'In Progress', 'Resolved', 'Closed'].map((step, idx) => {
+                {[
+                  { id: 'Pending', label: t('stepPending') },
+                  { id: 'Assigned', label: t('stepAssigned') },
+                  { id: 'InProgress', label: t('stepInProgress') },
+                  { id: 'Resolved', label: t('stepResolved') },
+                  { id: 'Closed', label: t('stepClosed') },
+                ].map((step, idx) => {
                   const currentIdx = getStatusStepIndex(request.status);
                   const isDone = currentIdx >= idx;
                   const isCurrent = currentIdx === idx;
                   return (
-                    <div key={step} className="flex flex-col items-center">
+                    <div key={step.id} className="flex flex-col items-center">
                       <div
                         className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs mb-1.5 transition-colors ${
                           isCurrent
@@ -160,7 +166,7 @@ export const TrackRequestPage = () => {
                           isDone ? 'text-slate-900 font-semibold' : 'text-slate-400'
                         }`}
                       >
-                        {step}
+                        {step.label}
                       </span>
                     </div>
                   );
@@ -170,23 +176,23 @@ export const TrackRequestPage = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <span className="text-xs text-slate-500 font-medium block">Room Number</span>
-                <span className="text-base font-bold text-slate-900">Room {request.roomNumber}</span>
+                <span className="text-xs text-slate-500 font-medium block">{t('roomCardLabel')}</span>
+                <span className="text-base font-bold text-slate-900">{t('roomBadge')} {request.roomNumber}</span>
               </div>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <span className="text-xs text-slate-500 font-medium block">Category</span>
+                <span className="text-xs text-slate-500 font-medium block">{t('categoryCardLabel')}</span>
                 <span className="text-base font-bold text-slate-900">{request.category}</span>
               </div>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <span className="text-xs text-slate-500 font-medium block">Assigned Dept</span>
+                <span className="text-xs text-slate-500 font-medium block">{t('assignedDeptCardLabel')}</span>
                 <span className="text-base font-bold text-slate-900">
-                  {request.assignedDepartment || 'Pending Assignment'}
+                  {request.assignedDepartment || t('pendingAssignmentText')}
                 </span>
               </div>
             </div>
 
             <div className="mt-4">
-              <span className="text-xs font-semibold text-slate-500 block mb-1">Description</span>
+              <span className="text-xs font-semibold text-slate-500 block mb-1">{t('descriptionCardLabel')}</span>
               <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl text-slate-800 text-sm leading-relaxed">
                 {request.description}
               </div>
@@ -211,19 +217,19 @@ export const TrackRequestPage = () => {
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-slate-500 mb-1">
                         <span className="font-semibold text-slate-700">
-                          Status: <span className="text-blue-600 font-bold">{hist.newStatus}</span>
+                          {t('statusLabel')}: <span className="text-blue-600 font-bold">{hist.newStatus}</span>
                         </span>
                         <span className="font-mono">{new Date(hist.createdAt).toLocaleString()}</span>
                       </div>
                       <p className="text-sm text-slate-700 mt-1">
-                        {hist.remarks || 'Status updated by hotel personnel.'}
+                        {hist.remarks || t('statusUpdatedByStaff')}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">No history updates logged yet.</p>
+              <p className="text-sm text-slate-500">{t('noHistoryYet')}</p>
             )}
           </div>
         </div>

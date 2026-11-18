@@ -154,12 +154,12 @@ export const GuestRequestPage = () => {
 
   // Category Selector Cards with Explicit Text Labels + Icons (Resolves Pilot Guest Confusion Feedback)
   const categoryCards = [
-    { id: 'Housekeeping', label: 'Housekeeping', desc: 'Cleaning, linen & towels', icon: Sparkles },
-    { id: 'Maintenance', label: 'Maintenance', desc: 'AC, plumbing & electricity', icon: Wrench },
-    { id: 'Food', label: 'Food & Dining', desc: 'Room service & beverages', icon: Utensils },
-    { id: 'Safety', label: 'Safety & Security', desc: 'Door locks, keycard & safety', icon: Shield },
-    { id: 'FrontOffice', label: 'Front Office', desc: 'Luggage & wake-up calls', icon: PhoneCall },
-    { id: 'Other', label: 'Other Inquiries', desc: 'General assistance', icon: HelpCircle },
+    { id: 'Housekeeping', labelKey: 'catHousekeeping', descKey: 'catHousekeepingDesc', icon: Sparkles },
+    { id: 'Maintenance', labelKey: 'catMaintenance', descKey: 'catMaintenanceDesc', icon: Wrench },
+    { id: 'Food', labelKey: 'catFood', descKey: 'catFoodDesc', icon: Utensils },
+    { id: 'Safety', labelKey: 'catSafety', descKey: 'catSafetyDesc', icon: Shield },
+    { id: 'FrontOffice', labelKey: 'catFrontOffice', descKey: 'catFrontOfficeDesc', icon: PhoneCall },
+    { id: 'Other', labelKey: 'catOther', descKey: 'catOtherDesc', icon: HelpCircle },
   ];
 
   return (
@@ -171,14 +171,14 @@ export const GuestRequestPage = () => {
             {t('portalTag')}
           </span>
           <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">
-            Room {formData.roomNumber || '---'}
+            {t('roomBadge')} {formData.roomNumber || '---'}
           </span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-          Hotel Arya Niwas Guest Portal
+          {t('portalHeading')}
         </h1>
         <p className="mt-1 text-slate-600 text-sm leading-relaxed">
-          Welcome! Scan from your room standee gives you instant access to lodge requests, report issues, and track your active room tickets in real-time.
+          {t('portalWelcome')}
         </p>
 
         {/* UNIFIED QR TABS: Launch vs Track Complaints */}
@@ -193,7 +193,7 @@ export const GuestRequestPage = () => {
             }`}
           >
             <PlusCircle className="w-4 h-4" />
-            Lodge Request / Complaint
+            {t('tabLodge')}
           </button>
           <button
             type="button"
@@ -208,7 +208,7 @@ export const GuestRequestPage = () => {
             }`}
           >
             <Clock className="w-4 h-4" />
-            My Room Tickets ({roomRequests.length})
+            {t('tabMyTickets')} ({roomRequests.length})
           </button>
         </div>
       </div>
@@ -311,10 +311,10 @@ export const GuestRequestPage = () => {
                     </div>
                     <div>
                       <span className="block text-xs font-bold text-slate-900 leading-tight">
-                        {cat.label}
+                        {t(cat.labelKey)}
                       </span>
                       <span className="block text-[11px] text-slate-500 mt-0.5 leading-tight">
-                        {cat.desc}
+                        {t(cat.descKey)}
                       </span>
                     </div>
                   </button>
@@ -403,7 +403,7 @@ export const GuestRequestPage = () => {
           {/* Quick Ticket ID Direct Search Bar */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
-              Search by Ticket ID (Optional)
+              {t('searchTicketLabel')}
             </span>
             <form onSubmit={handleTicketSearch} className="flex gap-2">
               <div className="relative flex-1">
@@ -411,7 +411,7 @@ export const GuestRequestPage = () => {
                   type="text"
                   value={ticketSearchInput}
                   onChange={(e) => setTicketSearchInput(e.target.value)}
-                  placeholder="Enter Ticket ID (e.g. AN-2026-7724)..."
+                  placeholder={t('searchTicketPlaceholder')}
                   className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-800 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
@@ -420,7 +420,7 @@ export const GuestRequestPage = () => {
                 type="submit"
                 className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors cursor-pointer"
               >
-                Track
+                {t('trackActionBtn')}
               </button>
             </form>
           </div>
@@ -430,10 +430,10 @@ export const GuestRequestPage = () => {
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">
-                  Active & Past Tickets for Room {formData.roomNumber || 'This Room'}
+                  {t('ticketsForRoomTitle', { room: formData.roomNumber || '---' })}
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Track the real-time progress of all issues submitted from this room.
+                  {t('ticketsForRoomSubtitle')}
                 </p>
               </div>
               <button
@@ -442,25 +442,25 @@ export const GuestRequestPage = () => {
                 className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingRoomRequests ? 'animate-spin' : ''}`} />
-                Refresh
+                {t('refreshBtn')}
               </button>
             </div>
 
             {loadingRoomRequests ? (
               <div className="py-12 text-center text-slate-500 text-sm">
                 <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                Loading tickets for Room {formData.roomNumber}...
+                {t('loadingTickets', { room: formData.roomNumber || '---' })}
               </div>
             ) : roomRequests.length === 0 ? (
               <div className="py-12 text-center text-slate-500 text-sm">
                 <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
-                No active service requests or complaints found for Room {formData.roomNumber}.
+                {t('noTicketsFound', { room: formData.roomNumber || '---' })}
                 <div className="mt-3">
                   <button
                     onClick={() => setActiveTab('new')}
                     className="text-xs font-bold text-blue-600 hover:underline"
                   >
-                    + Submit a New Request
+                    {t('submitNewLink')}
                   </button>
                 </div>
               </div>
@@ -481,7 +481,7 @@ export const GuestRequestPage = () => {
                         </span>
                         {req.isEscalated && (
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
-                            30m SLA Alert
+                            {t('slaAlertBadge')}
                           </span>
                         )}
                       </div>
@@ -496,12 +496,12 @@ export const GuestRequestPage = () => {
                     </p>
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-[11px] text-slate-500">
-                      <span>Submitted: {new Date(req.createdAt).toLocaleString()}</span>
+                      <span>{t('submittedAt')}: {new Date(req.createdAt).toLocaleString()}</span>
                       <button
                         onClick={() => navigate(`/guest/track?ticketId=${req.ticketId}`)}
                         className="text-blue-600 font-bold hover:underline self-end sm:self-auto cursor-pointer"
                       >
-                        View Full Timeline & Audit Log →
+                        {t('viewTimelineLink')}
                       </button>
                     </div>
                   </div>

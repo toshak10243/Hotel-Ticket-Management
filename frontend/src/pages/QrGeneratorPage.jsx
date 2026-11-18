@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { QrCode, ExternalLink, Bed } from 'lucide-react';
 import logoImg from '../assets/logo.png';
+import { useLanguage } from '../context/LanguageContext';
 
 export const QrGeneratorPage = () => {
+  const { t } = useLanguage();
   const [roomNumber, setRoomNumber] = useState('101');
   const [protocolAndHost] = useState(window.location.origin);
 
@@ -17,21 +19,21 @@ export const QrGeneratorPage = () => {
         <div className="flex items-center gap-2 mb-2">
           <QrCode className="w-5 h-5 text-blue-600" />
           <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
-            Room QR Standee Generator
+            {t('qrStandeeTag')}
           </span>
         </div>
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-          Hotel Room QR Code Configuration
+          {t('qrStandeeTitle')}
         </h1>
         <p className="mt-1 text-slate-600 text-sm">
-          Print or display this QR code in individual guest rooms. When guests scan this code with their smartphone camera, the request form automatically opens with the room number pre-populated.
+          {t('qrStandeeDesc')}
         </p>
 
         {/* Input Controls */}
         <div className="mt-6 flex flex-col sm:flex-row gap-4 items-center">
           <div className="w-full sm:w-64">
             <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase">
-              Target Room Number
+              {t('targetRoomLabel')}
             </label>
             <div className="relative">
               <input
@@ -47,7 +49,7 @@ export const QrGeneratorPage = () => {
 
           <div className="flex-1 w-full">
             <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase">
-              Quick Pick Room
+              {t('quickPickLabel')}
             </label>
             <div className="flex flex-wrap gap-2">
               {popularRooms.map((rm) => (
@@ -61,7 +63,7 @@ export const QrGeneratorPage = () => {
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  Room {rm}
+                  {t('roomBadge')} {rm}
                 </button>
               ))}
             </div>
@@ -76,11 +78,11 @@ export const QrGeneratorPage = () => {
           <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 overflow-hidden flex items-center justify-center mb-3 shadow-xs p-1">
             <img src={logoImg} alt="Hotel Arya Niwas Logo" className="w-full h-full object-contain" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900">Hotel Arya Niwas</h2>
-          <p className="text-xs text-slate-500 font-medium">Guest Service & Maintenance</p>
+          <h2 className="text-xl font-bold text-slate-900">{t('hotelName')}</h2>
+          <p className="text-xs text-slate-500 font-medium">{t('guestServiceMaintenance')}</p>
 
           <div className="mt-3 inline-block px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-200">
-            Room {roomNumber || '---'}
+            {t('roomBadge')} {roomNumber || '---'}
           </div>
 
           <div className="mt-6 p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
@@ -94,7 +96,7 @@ export const QrGeneratorPage = () => {
           </div>
 
           <p className="mt-4 text-xs text-slate-500 font-medium max-w-xs">
-            Scan with any phone camera to request housekeeping, room service, or report an issue.
+            {t('scanHelpText')}
           </p>
         </div>
 
@@ -132,7 +134,7 @@ export const QrGeneratorPage = () => {
               className="flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              Test Scan / Open Link Directly
+              {t('testOpenLink')}
             </a>
           </div>
         </div>
