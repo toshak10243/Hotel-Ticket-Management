@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   LayoutDashboard,
   ClipboardList,
@@ -9,11 +10,13 @@ import {
   LogOut,
   Menu,
   X,
+  Languages,
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
 export const StaffLayout = () => {
   const { user, logout } = useAuth();
+  const { lang, toggleLang, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,13 +27,13 @@ export const StaffLayout = () => {
   };
 
   const navItems = [
-    { label: 'Overview', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Requests & Complaints', path: '/dashboard/requests', icon: ClipboardList },
+    { label: t('navOverview'), path: '/dashboard', icon: LayoutDashboard },
+    { label: t('navRequests'), path: '/dashboard/requests', icon: ClipboardList },
     ...(user?.role === 'Admin' || user?.role === 'Manager'
-      ? [{ label: 'Manager Monitoring', path: '/dashboard/manager', icon: ShieldAlert }]
+      ? [{ label: t('navManager'), path: '/dashboard/manager', icon: ShieldAlert }]
       : []),
     ...(user?.role === 'Admin'
-      ? [{ label: 'Staff Management', path: '/dashboard/staff-management', icon: Users }]
+      ? [{ label: t('navStaffManagement'), path: '/dashboard/staff-management', icon: Users }]
       : []),
   ];
 
@@ -59,14 +62,25 @@ export const StaffLayout = () => {
         }`}
       >
         {/* Brand */}
-        <div className="h-16 px-5 border-b border-slate-100 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 overflow-hidden flex items-center justify-center shadow-xs">
-            <img src={logoImg} alt="Hotel Arya Niwas Logo" className="w-full h-full object-contain p-0.5" />
+        <div className="h-16 px-5 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 overflow-hidden flex items-center justify-center shadow-xs">
+              <img src={logoImg} alt="Hotel Arya Niwas Logo" className="w-full h-full object-contain p-0.5" />
+            </div>
+            <div>
+              <h1 className="font-bold text-slate-900 text-base leading-tight">{t('portalStaffTitle')}</h1>
+              <p className="text-xs text-slate-500 font-medium">{t('portalStaffSubtitle')}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold text-slate-900 text-base leading-tight">Arya Niwas</h1>
-            <p className="text-xs text-slate-500 font-medium">Hotel Staff Portal</p>
-          </div>
+          <button
+            type="button"
+            onClick={toggleLang}
+            className="flex items-center gap-1 px-2 py-1 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 cursor-pointer"
+            title="Switch Language"
+          >
+            <Languages className="w-3.5 h-3.5 text-blue-600" />
+            <span>{t('langToggle')}</span>
+          </button>
         </div>
 
         {/* Navigation Items */}
@@ -108,10 +122,10 @@ export const StaffLayout = () => {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-rose-700 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-rose-700 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
-            Sign Out
+            {t('btnSignOut')}
           </button>
         </div>
       </aside>
@@ -125,13 +139,22 @@ export const StaffLayout = () => {
               <img src={logoImg} alt="Logo" className="w-full h-full object-contain" />
             </div>
             <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md border border-slate-200">
-              Department Portal
+              {t('portalStaffDept')}
             </span>
             <span className="text-slate-400">&bull;</span>
-            <span className="text-xs font-medium text-slate-600">Jaipur, Rajasthan</span>
+            <span className="text-xs font-medium text-slate-600">{t('hotelSub')}</span>
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={toggleLang}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+              title="Switch Language"
+            >
+              <Languages className="w-3.5 h-3.5 text-blue-600" />
+              <span>{t('langToggle')}</span>
+            </button>
             <div className="text-right">
               <div className="text-sm font-medium text-slate-800">{user?.name}</div>
               <div className="text-xs text-slate-500">{user?.email}</div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
+import { useLanguage } from '../context/LanguageContext';
 import {
   ClipboardList,
   Clock,
@@ -21,6 +22,7 @@ import {
 import Swal from 'sweetalert2';
 
 export const DashboardOverview = () => {
+  const { t } = useLanguage();
   const [stats, setStats] = useState(null);
   const [recentRequests, setRecentRequests] = useState([]);
   const [roomAnalytics, setRoomAnalytics] = useState([]);
@@ -98,7 +100,7 @@ export const DashboardOverview = () => {
 
   const statCards = [
     {
-      title: 'Total Requests',
+      title: t('cardTotalRequests'),
       value: stats?.totalRequests ?? 0,
       icon: ClipboardList,
       color: 'text-slate-700',
@@ -106,7 +108,7 @@ export const DashboardOverview = () => {
       borderColor: 'border-slate-200',
     },
     {
-      title: 'Pending',
+      title: t('cardPending'),
       value: stats?.pendingRequests ?? 0,
       icon: Clock,
       color: 'text-amber-700',
@@ -114,7 +116,7 @@ export const DashboardOverview = () => {
       borderColor: 'border-amber-200',
     },
     {
-      title: 'In Progress',
+      title: t('cardInProgress'),
       value: stats?.inProgressRequests ?? 0,
       icon: TrendingUp,
       color: 'text-sky-700',
@@ -122,7 +124,7 @@ export const DashboardOverview = () => {
       borderColor: 'border-sky-200',
     },
     {
-      title: 'Resolved',
+      title: t('cardResolved'),
       value: stats?.resolvedRequests ?? 0,
       icon: CheckCircle,
       color: 'text-emerald-700',
@@ -130,7 +132,7 @@ export const DashboardOverview = () => {
       borderColor: 'border-emerald-200',
     },
     {
-      title: 'High Priority (Sorted First)',
+      title: t('cardHighPriority'),
       value: stats?.highPriorityRequests ?? 0,
       icon: AlertOctagon,
       color: 'text-rose-700',
@@ -145,14 +147,14 @@ export const DashboardOverview = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Enterprise Hotel Operations Dashboard</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('dashboardHeading')}</h1>
             <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              LIVE
+              {t('liveBadge')}
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-0.5">
-            Hotel Arya Niwas operations queue, worker workload cap (Max 5), and repeat complaint analytics.
+            {t('dashboardSubheading')}
           </p>
         </div>
 
@@ -163,7 +165,7 @@ export const DashboardOverview = () => {
             title="Check unaddressed requests > 30 minutes"
           >
             <Clock className="w-3.5 h-3.5 text-amber-600" />
-            Check 30m SLA
+            {t('btnCheckSla')}
           </button>
 
           <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-lg cursor-pointer">
@@ -173,7 +175,7 @@ export const DashboardOverview = () => {
               onChange={(e) => setAutoRefresh(e.target.checked)}
               className="rounded text-blue-600"
             />
-            Auto-Refresh
+            {t('chkAutoRefresh')}
           </label>
 
           <button
@@ -182,7 +184,7 @@ export const DashboardOverview = () => {
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('refreshBtn')}
           </button>
         </div>
       </div>
@@ -219,13 +221,13 @@ export const DashboardOverview = () => {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <Bed className="w-4 h-4 text-rose-600" />
-              <h3 className="font-bold text-slate-900 text-sm">Room Analytics (Repeat Complaints)</h3>
+              <h3 className="font-bold text-slate-900 text-sm">{t('roomAnalyticsHeading')}</h3>
             </div>
-            <span className="text-[11px] text-slate-400">Hotel Maintenance Radar</span>
+            <span className="text-[11px] text-slate-400">{t('roomAnalyticsSubtitle')}</span>
           </div>
           <div className="mt-3 space-y-2.5">
             {roomAnalytics.length === 0 ? (
-              <p className="text-xs text-slate-400 py-3 text-center">No room data recorded yet.</p>
+              <p className="text-xs text-slate-400 py-3 text-center">{t('noRoomData')}</p>
             ) : (
               roomAnalytics.map((rm) => (
                 <div
@@ -233,15 +235,15 @@ export const DashboardOverview = () => {
                   className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900 text-xs">Room {rm.roomNumber}</span>
+                    <span className="font-bold text-slate-900 text-xs">{t('roomBadge')} {rm.roomNumber}</span>
                     {rm.isHighAttention && (
                       <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
-                        Frequent Issues
+                        {t('frequentIssuesBadge')}
                       </span>
                     )}
                   </div>
                   <span className="text-xs font-semibold text-slate-600">
-                    {rm.totalIssues} {rm.totalIssues === 1 ? 'ticket' : 'tickets'} logged
+                    {t('ticketsLoggedText', { count: rm.totalIssues })}
                   </span>
                 </div>
               ))
@@ -254,15 +256,15 @@ export const DashboardOverview = () => {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-600" />
-              <h3 className="font-bold text-slate-900 text-sm">Staff Workload Capacity (Limit: 5/worker)</h3>
+              <h3 className="font-bold text-slate-900 text-sm">{t('staffCapacityHeading')}</h3>
             </div>
             <Link to="/dashboard/staff-management" className="text-[11px] text-blue-600 font-bold hover:underline">
-              Manage Staff
+              {t('manageStaffLink')}
             </Link>
           </div>
           <div className="mt-3 space-y-2.5">
             {staffWorkload.length === 0 ? (
-              <p className="text-xs text-slate-400 py-3 text-center">No staff accounts active.</p>
+              <p className="text-xs text-slate-400 py-3 text-center">{t('noStaffActive')}</p>
             ) : (
               staffWorkload.map((sw) => (
                 <div key={sw.id} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50">
@@ -270,11 +272,11 @@ export const DashboardOverview = () => {
                     <span className="font-bold text-slate-800">{sw.name}</span>
                     {sw.isOccupied ? (
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
-                        Occupied (5/5 Full)
+                        {t('occupiedBadge')}
                       </span>
                     ) : (
                       <span className="text-slate-500 font-medium">
-                        {sw.activeCount}/5 Active ({sw.resolvedCount} solved)
+                        {t('activeSolvedText', { active: sw.activeCount, solved: sw.resolvedCount })}
                       </span>
                     )}
                   </div>
@@ -301,36 +303,36 @@ export const DashboardOverview = () => {
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Priority Ranked Service Queue</h2>
+            <h2 className="text-lg font-bold text-slate-900">{t('serviceQueueHeading')}</h2>
             <p className="text-xs text-slate-500">
-              Sorted by Priority (High first) with one-tap quick status transitions
+              {t('serviceQueueSub')}
             </p>
           </div>
           <Link
             to="/dashboard/requests"
             className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
           >
-            Department Filtering & Full List
+            {t('deptFilterFullList')}
             <ArrowUpRight className="w-4 h-4" />
           </Link>
         </div>
 
         {loading && recentRequests.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 text-sm">Loading requests...</div>
+          <div className="py-12 text-center text-slate-500 text-sm">{t('loadingRequests')}</div>
         ) : recentRequests.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 text-sm">No active requests found.</div>
+          <div className="py-12 text-center text-slate-500 text-sm">{t('noActiveRequests')}</div>
         ) : (
           <div className="overflow-x-auto mt-4">
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-xs font-semibold text-slate-700 uppercase border-b border-slate-100">
                 <tr>
-                  <th className="px-4 py-3">Ticket ID</th>
-                  <th className="px-4 py-3">Room</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Priority</th>
-                  <th className="px-4 py-3">Current Status</th>
-                  <th className="px-4 py-3">Quick Actions (US09)</th>
-                  <th className="px-4 py-3 text-right">Action</th>
+                  <th className="px-4 py-3">{t('thTicketId')}</th>
+                  <th className="px-4 py-3">{t('thRoom')}</th>
+                  <th className="px-4 py-3">{t('thCategory')}</th>
+                  <th className="px-4 py-3">{t('thPriority')}</th>
+                  <th className="px-4 py-3">{t('thCurrentStatus')}</th>
+                  <th className="px-4 py-3">{t('thQuickActions')}</th>
+                  <th className="px-4 py-3 text-right">{t('thAction')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -347,12 +349,12 @@ export const DashboardOverview = () => {
                       <div className="font-mono font-bold text-blue-600 text-xs">{req.ticketId}</div>
                       {req.isEscalated && (
                         <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
-                          SLA Alert (30m)
+                          {t('slaAlertBadge')}
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-slate-900 font-bold whitespace-nowrap">
-                      Room {req.roomNumber}
+                      {t('roomBadge')} {req.roomNumber}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-xs">{req.category}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -369,7 +371,7 @@ export const DashboardOverview = () => {
                             onClick={() => handleQuickStatusUpdate(req.id, 'InProgress')}
                             className="px-2 py-1 text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 rounded hover:bg-sky-100 cursor-pointer"
                           >
-                            Mark In Progress
+                            {t('btnMarkInProgress')}
                           </button>
                         )}
                         {(req.status === 'Pending' || req.status === 'InProgress' || req.status === 'Assigned') && (
@@ -377,14 +379,14 @@ export const DashboardOverview = () => {
                             onClick={() => handleQuickStatusUpdate(req.id, 'Resolved')}
                             className="px-2 py-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded hover:bg-emerald-100 cursor-pointer"
                           >
-                            Mark Resolved
+                            {t('btnMarkResolved')}
                           </button>
                         )}
                         {req.status === 'Resolved' && (
-                          <span className="text-xs text-slate-400 italic">Awaiting Manager Sign-Off</span>
+                          <span className="text-xs text-slate-400 italic">{t('awaitingSignOffText')}</span>
                         )}
                         {req.status === 'Closed' && (
-                          <span className="text-xs text-slate-400 italic">Ticket Closed</span>
+                          <span className="text-xs text-slate-400 italic">{t('ticketClosedText')}</span>
                         )}
                       </div>
                     </td>
@@ -393,7 +395,7 @@ export const DashboardOverview = () => {
                         to={`/dashboard/requests/${req.id}`}
                         className="inline-flex items-center px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors"
                       >
-                        Manage
+                        {t('btnManage')}
                       </Link>
                     </td>
                   </tr>
